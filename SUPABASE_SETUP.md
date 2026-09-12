@@ -31,6 +31,12 @@ The anon/publishable key may be used in a browser. Never add the `service_role` 
 
 Deploy the complete `SIH` folder to Netlify again. On the next page refresh, new crop lots and submitted offers will save in Supabase and be visible from any device using the website.
 
+## 5. Add live AGMARKNET prices
+
+1. In Netlify, open **Site configuration > Environment variables**.
+2. Add `AGMARKNET_API_KEY` with the API key you generated on data.gov.in.
+3. Redeploy this updated folder. Netlify detects `netlify/functions/mandi-prices.mjs` automatically and keeps your API key server-side.
+
 ## Demo vs production
 
 This is an SIH demo configuration. Its database policies allow public anonymous demo access. Before collecting real farmers' information, replace the demo policies with Supabase Auth and strict per-user policies; use a server-side SMS OTP flow; and do not collect Aadhaar numbers, Aadhaar OTPs, or biometrics.
