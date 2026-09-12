@@ -3,6 +3,8 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-config.js';
 const STORAGE = 'krishisetu-demo';
 const configured = () => SUPABASE_URL.startsWith('https://') && SUPABASE_ANON_KEY.length > 20;
 const makeId = () => crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+const normalize = value => String(value || '').trim().toLowerCase();
+const lotKey = lot => `${normalize(lot.name || lot.crop_name)}|${normalize(lot.loc || lot.location)}|${normalize(lot.grade || lot.quality_grade)}|${normalize(lot.farmer || lot.owner_name)}`;
 const getDemoId = () => {
   let id = localStorage.getItem(`${STORAGE}-user-id`);
   if (!id) { id = makeId(); localStorage.setItem(`${STORAGE}-user-id`, id); }
@@ -23,17 +25,33 @@ const presentLot = row => ({
   price: Number(row.list_price || 0).toLocaleString('en-IN'),
   icon: '🌾',
   accent: '#8baa65',
-  farmer: row.owner_name || row.profiles?.full_name || 'Verified Farmer'
+  farmer: row.owner_name || row.profiles?.full_name || 'Verified Farmer',
+  lotKey: row.lot_key || lotKey(row)
 });
 
 function localStore() {
   return {
     mode: 'local demo',
-    async getLots() { return read('lots', []).map(presentLot); },
+    async getLots() {
+      const rows = read('lots', []);
+      const uniqueRows = rows.filter((row, index, list) => list.findIndex(entry => entry.id === row.id || lotKey(entry) === lotKey(row)) === index);
+      if (uniqueRows.length !== rows.length) write('lots', uniqueRows);
+      return uniqueRows.map(presentLot);
+    },
     async upsertProfile(profile) { write('profile', { id: getDemoId(), ...profile, updatedAt: new Date().toISOString() }); },
     async createLot(lot, profile) {
-      const rows = read('lots', []); const row = { ...parseLot(lot), owner_id: getDemoId(), owner_name: profile.fullName, created_at: new Date().toISOString() };
-      rows.unshift(row); write('lots', rows); return presentLot(row);
+      const rows = read('lots', []);
+      const now = new Date().toISOString();
+      const ownerId = getDemoId();
+      const row = { ...parseLot(lot), owner_id: ownerId, owner_name: profile.fullName, lot_key: lotKey(lot), created_at: now, updated_at: now };
+      const index = rows.findIndex(entry => entry.owner_id === ownerId && lotKey(entry) === row.lot_key);
+      if (index >= 0) {
+        rows[index] = { ...rows[index], ...row, id: rows[index].id, created_at: rows[index].created_at || now, updated_at: now };
+      } else {
+        rows.unshift(row);
+      }
+      write('lots', rows);
+      return presentLot(index >= 0 ? rows[index] : row);
     },
     async createOffer(offer) { const offers = read('offers', []); offers.unshift({ id: makeId(), sender_id: getDemoId(), ...offer, created_at: new Date().toISOString() }); write('offers', offers); },
     async getMessages(conversationKey) { return read('messages', []).filter(message => message.conversation_key === conversationKey); },
@@ -61,8 +79,16 @@ export async function createDemoStore() {
       async createLot(lot, profile) {
         const row = parseLot(lot); const ownerId = getDemoId();
         await this.upsertProfile(profile);
+        const { data: existing, error: existingError } = await supabase.from('crop_lots').select('id, created_at').eq('owner_id', ownerId).eq('status', 'available').eq('crop_name', row.crop_name).eq('location', row.location).eq('quality_grade', row.quality_grade).order('created_at', { ascending: false }).limit(1).maybeSingle();
+        if (existingError) throw existingError;
+        if (existing?.id) {
+          const { data, error } = await supabase.from('crop_lots').update({ quantity: row.quantity, unit: row.unit, list_price: row.list_price, owner_name: profile.fullName }).eq('id', existing.id).select().single();
+          if (error) throw error;
+          return presentLot(data);
+        }
         const { data, error } = await supabase.from('crop_lots').insert({ ...row, owner_id: ownerId, owner_name: profile.fullName, status: 'available' }).select().single();
-        if (error) throw error; return presentLot(data);
+        if (error) throw error;
+        return presentLot(data);
       },
       async createOffer(offer) {
         const { error } = await supabase.from('offers').insert({ buyer_id: getDemoId(), amount: offer.amount, note: `Offer for ${offer.lotName}`, status: 'sent' });
