@@ -38,6 +38,7 @@ function localStore() {
     async createOffer(offer) { const offers = read('offers', []); offers.unshift({ id: makeId(), sender_id: getDemoId(), ...offer, created_at: new Date().toISOString() }); write('offers', offers); },
     async getMessages(conversationKey) { return read('messages', []).filter(message => message.conversation_key === conversationKey); },
     async sendMessage(message) { const messages = read('messages', []); messages.push({ id: makeId(), conversation_key: message.conversationKey, sender_id: getDemoId(), sender_name: message.senderName, sender_role: message.senderRole, body: message.body, created_at: new Date().toISOString() }); write('messages', messages); },
+    async deleteLot(id) { write('lots', read('lots', []).filter(lot => lot.id !== id)); },
     subscribeMessages() { return () => {}; }
   };
 }
@@ -73,6 +74,10 @@ export async function createDemoStore() {
       },
       async sendMessage(message) {
         const { error } = await supabase.from('messages').insert({ conversation_key: message.conversationKey, sender_id: getDemoId(), sender_name: message.senderName, sender_role: message.senderRole, body: message.body });
+        if (error) throw error;
+      },
+      async deleteLot(id) {
+        const { error } = await supabase.from('crop_lots').delete().eq('id', id).eq('owner_id', getDemoId());
         if (error) throw error;
       },
       subscribeMessages(conversationKey, onMessage) {
