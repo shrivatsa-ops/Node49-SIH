@@ -46,8 +46,48 @@ function renderOrder(id){const order=orders[id];if(!order)return;$$('.order-card
 function renderInsight(crop){const data=insightData[crop];if(!data)return;$('#chartLabel').textContent=data.label;$('#chartPrice').innerHTML=`₹${data.price.toLocaleString('en-IN')} <em class="${data.change.startsWith('-')?'negative':''}">${data.change}</em>`;$('#insightSignal').textContent=data.signal;$('#insightDetail').textContent=data.detail;const min=Math.min(...data.trend),max=Math.max(...data.trend),range=Math.max(max-min,1);const points=data.trend.map((value,index)=>`${(index/(data.trend.length-1)*700).toFixed(1)},${(190-((value-min)/range)*165).toFixed(1)}`);$('#chartLine').setAttribute('d',`M${points.join(' L')}`);$('#chartArea').setAttribute('d',`M${points.join(' L')} L700,210 L0,210 Z`);}
 const priceName = value => String(value || '').replaceAll(/[^a-z]/gi, '').toLowerCase();
 const formatPrice = value => `₹${Number(value).toLocaleString('en-IN')}`;
-function renderMandiPrices(prices){const wanted=[['onion','onion'],['tomato','tomato'],['cotton','cotton'],['soybean','soybean']];wanted.forEach(([cardName,commodity])=>{const price=prices.find(item=>priceName(item.commodity).includes(commodity));const card=document.querySelector(`[data-live-crop="${cardName}"]`);if(!price||!card)return;card.querySelector('span').textContent=price.market;card.querySelector('b').textContent=price.commodity;card.querySelector('strong').innerHTML=`${formatPrice(price.modalPrice)} <small>/ Q</small>`;card.querySelector('em').className='up';card.querySelector('em').innerHTML='<i class="fa-solid fa-circle"></i> Live';});$('#mandiPriceRows').innerHTML=prices.slice(0,50).map(price=>`<tr><td>${escapeHtml(price.commodity)}</td><td>${escapeHtml(price.market)}, ${escapeHtml(price.district||'MH')}</td><td>${formatPrice(price.modalPrice)}</td><td>${escapeHtml(price.date||'Latest')}</td></tr>`).join('')||'<tr><td>No Maharashtra price records available.</td><td></td><td></td><td></td></tr>';}
-async function loadMandiPrices(){try{const response=await fetch('/.netlify/functions/mandi-prices');if(!response.ok)throw new Error('Live price function unavailable');const data=await response.json();renderMandiPrices(data.prices||[]);$('#mandiStatus').textContent=data.updatedAt?`UPDATED ${new Date(data.updatedAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`:'LIVE';}catch(error){console.info('Using price demo data until AGMARKNET is connected.',error);$('#mandiStatus').textContent='DEMO DATA · API PENDING';}}
+function renderMandiPrices(data){
+  const prices=data.prices||[];
+  const featured=data.featured||{};
+  const wanted=[['onion','onion',['nashik','lasalgaon']],['tomato','tomato',['pune','pimpri']],['cotton','cotton',['nagpur']],['soybean','soybean',['latur','soyabean']]];
+  wanted.forEach(([cardName,commodity,markets])=>{
+    const matches=prices.filter(item=>priceName(item.commodity).includes(commodity)||priceName(item.commodity).includes(cardName==='soybean'?'soyabean':commodity));
+    const price=featured[cardName]||matches.find(item=>markets.some(market=>priceName(item.market).includes(market)))||matches[0];
+    const card=document.querySelector(`[data-live-crop="${cardName}"]`);
+    if(!price||!card)return;
+    card.querySelector('span').textContent=price.market;
+    card.querySelector('b').textContent=price.commodity;
+    card.querySelector('strong').innerHTML=`${formatPrice(price.modalPrice)} <small>/ Q</small>`;
+    card.querySelector('em').className='up';
+    card.querySelector('em').innerHTML='<i class="fa-solid fa-circle"></i> Live';
+    if(insightData[cardName])insightData[cardName].price=price.modalPrice;
+  });
+  $('#mandiPriceRows').innerHTML=prices.slice(0,50).map(price=>`<tr><td>${escapeHtml(price.commodity)}</td><td>${escapeHtml(price.market)}, ${escapeHtml(price.district||'MH')}</td><td>${formatPrice(price.modalPrice)}</td><td>${escapeHtml(price.date||'Latest')}</td></tr>`).join('')||'<tr><td>No Maharashtra price records available.</td><td></td><td></td><td></td></tr>';
+  renderInsight($('#insightCrop').value||'onion');
+}
+async function fetchMandiPayload(){
+  const endpoints=['/api/mandi-prices','/.netlify/functions/mandi-prices'];
+  let lastError=new Error('Live price function unavailable');
+  for(const endpoint of endpoints){
+    try{
+      const response=await fetch(endpoint);
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok)throw new Error(data.error||`Live price function returned ${response.status}`);
+      return data;
+    }catch(error){lastError=error;}
+  }
+  throw lastError;
+}
+async function loadMandiPrices(){
+  try{
+    const data=await fetchMandiPayload();
+    renderMandiPrices(data);
+    $('#mandiStatus').textContent=data.updatedAt?`UPDATED ${new Date(data.updatedAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`:'LIVE';
+  }catch(error){
+    console.info('Using price demo data until AGMARKNET is connected.',error);
+    $('#mandiStatus').textContent='DEMO DATA · API PENDING';
+  }
+}
 const escapeHtml = value => String(value).replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
 function counterpart(){return userRole==='buyer'?{name:activeConversation.farmer,role:'Verified farmer · Nashik',avatar:activeConversation.farmer.split(' ').map(x=>x[0]).join('').slice(0,2)}:{name:'Shree Produce Co.',role:'Verified buyer · Mumbai',avatar:'SP'};}
 function defaultMessages(){const c=counterpart();return userRole==='buyer'?[{senderRole:'farmer',body:`Namaskar! My ${activeConversation.grade} ${activeConversation.lotName} lot is available at ₹${activeConversation.price}/Q.`},{senderRole:'buyer',body:'Namaskar. I am interested in the complete lot. What is your best price?'},{senderRole:'farmer',body:'I can consider a fair offer for the full quantity.'}]:[{senderRole:'buyer',body:`Namaskar! We are interested in your ${activeConversation.grade} ${activeConversation.lotName} lot. Can we work with ₹2,520/Q?`},{senderRole:'farmer',body:'Namaskar. The current demand is strong. I can offer ₹2,580/Q for the complete lot.'},{senderRole:'buyer',body:'That works. Please send an offer so we can confirm.'}];}

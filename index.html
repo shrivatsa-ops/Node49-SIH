@@ -9,26 +9,6 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="style.css" />
-  <style>
-    .menu-backdrop,.mobile-sidebar-head{display:none}
-    @media (max-width:720px){
-      .menu-backdrop{display:block;position:fixed;inset:0;background:#10261dcc;z-index:29;opacity:0;visibility:hidden;transition:.2s}
-      .menu-backdrop.visible{opacity:1;visibility:visible}
-      .sidebar{display:flex;position:fixed;z-index:30;inset:0 auto 0 0;width:min(282px,85vw);padding:18px 15px;transform:translateX(-105%);transition:transform .25s ease;box-shadow:14px 0 35px #00160e2b}
-      .sidebar.mobile-open{transform:translateX(0)}
-      .mobile-sidebar-head{display:flex;align-items:center;justify-content:space-between;padding:2px 5px 12px;border-bottom:1px solid #e1e8e4}
-      .mobile-sidebar-head .brand{font-size:20px}.mobile-sidebar-head button{width:32px;height:32px;background:#eff4f1;color:#07533f;border-radius:7px}
-      .desktop-brand{display:none}.profile-card{margin:19px 0 23px}
-    }
-    .chat-composer{display:flex;gap:8px;padding:12px 18px 17px;border-top:1px solid #e1e8e3;background:#fff}
-    .chat-composer input{flex:1;border:1px solid #cddbd4;border-radius:7px;padding:10px 11px;outline:0;font-size:11px}
-    .chat-composer input:focus{border-color:#087457;box-shadow:0 0 0 3px #08745715}
-    .chat-composer button{width:38px;background:#087457;color:#fff;border-radius:7px}
-    .lot-button{width:100%;text-align:left;font-family:inherit;color:#162b27;cursor:pointer}.lot-button:focus-visible{outline:3px solid #e3a637;outline-offset:2px}.lot-button:after{content:'View details';position:absolute;right:17px;bottom:54px;color:#087457;font-size:10px;font-weight:700;opacity:0;transition:.2s}.lot-button:hover:after{opacity:1}
-    .mandi-modal{width:min(750px,100%)}.mandi-modal .muted{font-size:12px}.live-status{color:#078461;font-weight:700;font-size:10px;margin-left:6px}.live-status i{font-size:7px}.mandi-table{width:100%;border-collapse:collapse;margin-top:18px}.mandi-table th{text-align:left;padding:9px 8px;color:#7a8984;font-size:9px;letter-spacing:.6px;border-bottom:1px solid #dce6e0}.mandi-table td{padding:11px 8px;font-size:11px;border-bottom:1px solid #edf1ee}.mandi-table td:nth-child(3){font-weight:700;color:#07533f}.mandi-type{font-size:9px;color:#7b8985;background:#edf4ef;padding:4px 6px;border-radius:10px}.mandi-up{color:#16845a}.mandi-down{color:#b84b55}
-    .lot-detail{width:min(470px,100%)}.detail-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:21px 0}.detail-metrics span{background:#f4f8f4;border:1px solid #dfe9e1;border-radius:8px;padding:10px;display:grid;gap:4px}.detail-metrics small{font-size:9px;color:#71817e}.detail-metrics b{font-size:12px}.detail-metrics .available{color:#078461}.detail-ai{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fff9e9;border:1px solid #f7e9bd;border-radius:9px;padding:13px}.detail-ai>div{display:flex;gap:9px;align-items:flex-start}.detail-ai i{color:#d88300;margin-top:2px}.detail-ai span{display:grid;gap:4px}.detail-ai b{font-size:12px}.detail-ai small{font-size:10px;line-height:1.4;color:#816b3d}.detail-ai button{font-size:10px;padding:8px;white-space:nowrap}.delete-lot{width:100%;margin-top:13px;padding:10px;background:#fff;color:#ba4f4f;border:1px solid #f0c9c9;border-radius:7px;font-size:11px;font-weight:700}.chart-heading{display:flex;justify-content:space-between;gap:15px}.crop-select{display:grid;gap:5px;color:#71817e;font-size:10px;font-weight:700}.crop-select select{border:1px solid #cbd8d2;background:#fff;border-radius:6px;color:#07533f;font-size:11px;font-weight:700;padding:7px}.data-note{color:#8a9792;font-size:10px;display:block;margin-top:5px}.chart-card h3 em.negative{background:#fce3e4;color:#b84b55}
-    @media (max-width:720px){.detail-metrics{grid-template-columns:1fr}.detail-ai{align-items:flex-start;flex-direction:column}.chart-heading{flex-direction:column}.crop-select{width:100%}.crop-select select{width:100%}}
-  </style>
 </head>
 <body>
   <div id="authView" class="auth-page">

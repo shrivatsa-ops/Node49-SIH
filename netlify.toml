@@ -1,5 +1,11 @@
 [build]
+  publish = "."
   functions = "netlify/functions"
 
 [functions]
   node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/api/mandi-prices"
+  to = "/.netlify/functions/mandi-prices"
+  status = 200
