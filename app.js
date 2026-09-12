@@ -27,6 +27,21 @@ const insightData={
   cotton:{label:'NAGPUR COTTON · ₹ / QUINTAL',price:6200,change:'+0.8%',trend:[6040,6060,6090,6080,6110,6140,6120,6160,6180,6200],signal:'Cotton prices are showing a gradual upward trend.',detail:'Grade A lots can benefit from clear quality evidence and bulk offers.'},
   soybean:{label:'LATUR SOYBEAN · ₹ / QUINTAL',price:4350,change:'+1.5%',trend:[4210,4230,4250,4280,4260,4295,4310,4300,4320,4350],signal:'Soybean demand is firm in Latur this week.',detail:'Current demand supports timely listing for cleaned and graded lots.'}
 };
+const liveMandiByCrop={};
+const cropKeyFromName=name=>{const value=String(name||'').toLowerCase();if(value.includes('onion'))return'onion';if(value.includes('tomato'))return'tomato';if(value.includes('cotton'))return'cotton';if(value.includes('soybean')||value.includes('soyabean'))return'soybean';return null;};
+const recommendationMultipliers=grade=>grade==='Grade A'?[1.03,1.08]:grade==='Grade B'?[0.98,1.03]:[1,1.05];
+function livePriceRecommendation(cropName,grade='Grade A'){
+  const key=cropKeyFromName(cropName)||'onion';
+  const live=liveMandiByCrop[key];
+  const base=live?.modalPrice||insightData[key]?.price||2450;
+  const [minMultiplier,maxMultiplier]=recommendationMultipliers(grade);
+  const min=Math.round(base*minMultiplier/10)*10;
+  const max=Math.round(base*maxMultiplier/10)*10;
+  const mid=Math.round((min+max)/2/10)*10;
+  const range=`₹${min.toLocaleString('en-IN')} - ₹${max.toLocaleString('en-IN')}/Q`;
+  const note=live?`based on live ${live.market} mandi rates`:'based on latest mandi trend';
+  return {range,suggested:mid,text:`${grade} quality: list around ${range} ${note} to stay competitive.`};
+}
 function farmerCard(l,i){return `<button class="lot-card lot-button" data-lot-index="${i}" style="--accent:${l.accent}"><div class="lot-top"><div><h3>${l.name}</h3><p>${l.loc} · ${l.grade}</p></div><span class="grade">Available</span></div><div class="lot-bottom"><span>${l.qty}</span><strong>₹${l.price}<small>/Q</small></strong></div></button>`}
 function marketCard(l,i){let c=i===1?' tomato':i===2?' cotton':'';return `<article class="market-card"><div class="market-photo${c}">${l.icon}<span><i class="fa-solid fa-circle-check"></i> AI quality checked</span></div><div class="market-content"><h3>${l.name}</h3><p><i class="fa-solid fa-location-dot"></i> ${l.loc} · by ${l.farmer}</p><div class="market-meta"><span><b>${l.qty.split(' ')[0]} Q</b><br>Quantity</span><span><b>${l.grade}</b><br>Quality</span><span><b>₹${l.price}</b><br>per Q</span></div><div class="market-actions"><button class="negotiate" data-negotiate="${l.name}" data-farmer="${l.farmer}" data-price="${l.price}" data-grade="${l.grade}">Negotiate</button><button class="buy" data-negotiate="${l.name}" data-farmer="${l.farmer}" data-price="${l.price}" data-grade="${l.grade}">Make offer</button></div></div></article>`}
 const cropCategory=lot=>lot.category||(/onion|tomato|potato|okra/i.test(lot.name)?'vegetables':/grape|pomegranate|banana/i.test(lot.name)?'fruits':'grains');
@@ -50,11 +65,13 @@ function renderMandiPrices(data){
   const prices=data.prices||[];
   const featured=data.featured||{};
   const wanted=[['onion','onion',['nashik','lasalgaon']],['tomato','tomato',['pune','pimpri']],['cotton','cotton',['nagpur']],['soybean','soybean',['latur','soyabean']]];
+  Object.keys(liveMandiByCrop).forEach(key=>delete liveMandiByCrop[key]);
   wanted.forEach(([cardName,commodity,markets])=>{
     const matches=prices.filter(item=>priceName(item.commodity).includes(commodity)||priceName(item.commodity).includes(cardName==='soybean'?'soyabean':commodity));
     const price=featured[cardName]||matches.find(item=>markets.some(market=>priceName(item.market).includes(market)))||matches[0];
     const card=document.querySelector(`[data-live-crop="${cardName}"]`);
     if(!price||!card)return;
+    liveMandiByCrop[cardName]={modalPrice:price.modalPrice,market:price.market,commodity:price.commodity,date:price.date};
     card.querySelector('span').textContent=price.market;
     card.querySelector('b').textContent=price.commodity;
     card.querySelector('strong').innerHTML=`${formatPrice(price.modalPrice)} <small>/ Q</small>`;
@@ -98,7 +115,7 @@ async function sendChatMessage(body){const message=body.trim();if(!message)retur
 function openNegotiation(data){activeConversation={key:data.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''),lotName:data.name,farmer:data.farmer||'Ramesh Kale',price:data.price||'2,450',grade:data.grade||'Grade A'};page('messages');toast(`Opening discussion for ${data.name}`);}
 function bindNegotiations(){$$('[data-negotiate]').forEach(b=>b.onclick=()=>openNegotiation({name:b.dataset.negotiate,farmer:b.dataset.farmer,price:b.dataset.price,grade:b.dataset.grade}))}
 let selectedLotIndex = 0;
-function lotRecommendation(lot){const prices={onion:'₹2,580 - ₹2,680/Q',tomato:'₹1,840 - ₹1,930/Q',cotton:'₹6,250 - ₹6,400/Q',soybean:'₹4,390 - ₹4,480/Q'};const key=lot.name.toLowerCase().includes('onion')?'onion':lot.name.toLowerCase().includes('tomato')?'tomato':lot.name.toLowerCase().includes('cotton')?'cotton':'soybean';return `${lot.grade} quality: list around ${prices[key]} to balance demand and buyer interest.`;}
+function lotRecommendation(lot){return livePriceRecommendation(lot.name,lot.grade).text;}
 function openLotDetails(index){selectedLotIndex=index;const lot=lots[index];$('#detailLotName').textContent=lot.name;$('#detailLotLocation').textContent=`${lot.loc} · ${lot.grade}`;$('#detailLotQty').textContent=lot.qty;$('#detailLotPrice').textContent=`₹${lot.price}/Q`;$('#detailAiText').textContent=lotRecommendation(lot);$('#deleteLot').classList.toggle('hidden',userRole!=='farmer'||(lot.farmer&&lot.farmer!==userName&&userName!=='Ramesh Kale'));$('#detailNegotiate').classList.toggle('hidden',userRole!=='buyer');$('#detailNegotiate').onclick=()=>{closeModals();openNegotiation({name:lot.name,farmer:lot.farmer,price:lot.price,grade:lot.grade});};openModal('#lotDetailModal');}
 async function removeSelectedLot(){const lot=lots[selectedLotIndex];if(!lot)return;try{if(lot.id&&store)await store.deleteLot(lot.id);}catch(error){toast('Could not remove the shared lot. Please try again.');return;}lots.splice(selectedLotIndex,1);renderLots();closeModals();toast('Crop lot deleted.');}
 $('#loginForm').onsubmit=e=>{e.preventDefault();userRole='farmer';showApp();toast('Welcome back, Ramesh!')};$('#showSignup').onclick=()=>view('#signupView');$('#backToLogin').onclick=()=>view('#authView');$('#signupForm').onsubmit=e=>{e.preventDefault();userName=$('#fullName').value||'Farmer';userRole=document.querySelector('input[name="role"]:checked').value;view('#otpView')};$('#backToSignup').onclick=()=>view('#signupView');
@@ -107,7 +124,7 @@ $$('[data-lang-toggle]').forEach(b=>b.onclick=()=>{lang=lang==='en'?'mr':lang===
 $('#openLot').onclick=()=>openModal('#lotModal');$('#openLotTwo').onclick=()=>openModal('#lotModal');$$('[data-close]').forEach(b=>b.onclick=closeModals);$$('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModals()}));
 $('#deleteLot').onclick=()=>{const lot=lots[selectedLotIndex];if(lot&&confirm(`Delete ${lot.name}? This cannot be undone.`))removeSelectedLot();};$$('.order-card').forEach(card=>card.onclick=()=>renderOrder(card.dataset.order));$('#insightCrop').onchange=e=>renderInsight(e.target.value);
 $('#openCamera').onclick=async()=>{openModal('#cameraModal');try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false});$('#cameraFeed').srcObject=stream;$('#cameraFeed').style.display='block';$('.camera-fallback').style.display='none'}catch(e){toast('Camera preview is simulated in this demo.')}};
-$('#analyseCrop').onclick=()=>{closeModals();setTimeout(()=>openModal('#qualityModal'),250)};$('#useQuality').onclick=()=>{closeModals();$('#listingPrice').value='2580';$('#aiSuggestion').textContent='Grade A detected. Fair price: ₹2,580 - ₹2,680 / Q';openModal('#lotModal');toast('AI quality rating applied to your lot.')};
+$('#analyseCrop').onclick=()=>{closeModals();setTimeout(()=>openModal('#qualityModal'),250)};$('#useQuality').onclick=()=>{closeModals();const recommendation=livePriceRecommendation($('#cropType').value,'Grade A');$('#listingPrice').value=String(recommendation.suggested);$('#aiSuggestion').textContent=`Grade A detected. Fair price near live mandi: ${recommendation.range}`;openModal('#lotModal');toast('AI quality rating applied to your lot.')};
 $('#lotForm').onsubmit=e=>{e.preventDefault();const crop=$('#cropType').value;const l={name:crop,loc:$('#lotLocation').value.replace(', Maharashtra',', MH'),grade:$('#aiSuggestion').textContent.includes('Grade A')?'Grade A':'Grade B',qty:$('#quantity').value,price:Number($('#listingPrice').value).toLocaleString('en-IN'),icon:'🌾',accent:'#8baa65',farmer:userName};lots.unshift(l);renderLots();if(store)store.createLot(l,{fullName:userName,role:userRole}).then(saved=>{if(saved?.id)l.id=saved.id;}).catch(()=>toast('Saved on this device. Connect Supabase to share it online.'));closeModals();toast('Your crop lot is now live for verified buyers!')};
 $('#cropSearch').oninput=e=>{marketSearch=e.target.value.toLowerCase();renderMarket();};$$('.chip').forEach(c=>c.onclick=()=>{activeMarketCategory=({"All crops":'all',Vegetables:'vegetables',Grains:'grains',Fruits:'fruits',Organic:'organic'})[c.textContent]||'all';$$('.chip').forEach(x=>x.classList.remove('active'));c.classList.add('active');renderMarket();toast(`${c.textContent} filter applied`)});$('#viewAllPrices').onclick=()=>openModal('#mandiModal');$('#sendOffer').onclick=async()=>{const val=$('#offerValue').value;const text=userRole==='buyer'?`I would like to offer ₹${val}/Q for the complete lot.`:`I can offer ₹${val}/Q for the complete lot.`;await sendChatMessage(text);if(store)store.createOffer({lotName:activeConversation.lotName,amount:Number(val)}).catch(()=>toast('Offer saved on this device. Connect Supabase to share it online.'));toast('Your offer has been sent.')};$('#sendChat').onclick=async()=>{await sendChatMessage($('#chatInput').value);$('#chatInput').value='';};$('#chatInput').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();$('#sendChat').click();}};
 
