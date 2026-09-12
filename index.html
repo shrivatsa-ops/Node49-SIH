@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="assets/css/modal-fix.css" />
 </head>
 <body>
   <div id="authView" class="auth-page">
@@ -72,6 +73,7 @@
   <div id="lotDetailModal" class="modal"><div class="modal-box lot-detail"><button class="modal-close" data-close><i class="fa-solid fa-xmark"></i></button><p class="eyebrow">CROP LOT DETAILS</p><h2 id="detailLotName">Nashik Red Onions</h2><p class="muted" id="detailLotLocation">Nashik, MH · Grade A</p><div class="detail-metrics"><span><small>Quantity</small><b id="detailLotQty">50 Quintals</b></span><span><small>Listed price</small><b id="detailLotPrice">₹2,450/Q</b></span><span><small>Status</small><b class="available">Available</b></span></div><div class="detail-ai"><div><i class="fa-solid fa-wand-magic-sparkles"></i><span><b>AI selling guidance</b><small id="detailAiText">Grade A quality: list around ₹2,580 - ₹2,680/Q to balance demand and buyer interest.</small></span></div><button id="detailNegotiate" class="outline-btn">Negotiate</button></div><button id="deleteLot" class="delete-lot"><i class="fa-regular fa-trash-can"></i> Delete this lot</button></div></div>
   <div id="mandiModal" class="modal"><div class="modal-box mandi-modal"><button class="modal-close" data-close><i class="fa-solid fa-xmark"></i></button><p class="eyebrow">AGMARKNET · MARKET PRICES <span class="live-status"><i class="fa-solid fa-circle"></i> <span id="mandiStatus">LOADING LATEST DATA</span></span></p><h2>All mandi prices</h2><p class="muted">Modal prices in ₹ per quintal. Fruits and vegetables are included for a fuller buying and selling view.</p><table class="mandi-table"><thead><tr><th>CROP</th><th>MARKET</th><th>MODAL PRICE</th><th>ARRIVAL DATE</th></tr></thead><tbody id="mandiPriceRows"><tr><td>Loading current market prices…</td><td></td><td></td><td></td></tr></tbody></table></div></div>
   <div id="toast" class="toast"><i class="fa-solid fa-circle-check"></i><span></span></div>
+  <script src="assets/js/modal-fix.js"></script>
   <script type="module" src="app.js"></script>
 </body>
 </html>

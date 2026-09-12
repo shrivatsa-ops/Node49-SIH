@@ -1,0 +1,25 @@
+/* modal-fix.css - make modal content scroll internally and prevent body scroll when modal is open */
+.modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(16, 24, 18, 0.45);
+  z-index: 1000;
+  padding: 20px;
+  overflow: auto;
+}
+
+.modal-box {
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  width: min(900px, 98%);
+  box-sizing: border-box;
+}
+
+body.modal-open {
+  overflow: hidden;
+  height: 100%;
+}
