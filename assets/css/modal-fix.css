@@ -2,13 +2,17 @@
 .modal {
   position: fixed;
   inset: 0;
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
   background: rgba(16, 24, 18, 0.45);
   z-index: 1000;
   padding: 20px;
   overflow: auto;
+}
+
+.modal.open {
+  display: flex;
 }
 
 .modal-box {
