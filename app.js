@@ -108,6 +108,7 @@ const formatPrice = value => `₹${Number(value).toLocaleString('en-IN')}`;
 function renderMandiPrices(data){
   const prices=(data.prices||[]).filter(price=>Boolean(cropKeyFromName(price.commodity)));
   const featured=data.featured||{};
+  const isLive=!data.isFallback;
   const wanted=[['onion','onion',['nashik','lasalgaon']],['tomato','tomato',['pune','pimpri']],['brinjal','brinjal',['nashik','pune']],['peas','peas',['pune','nashik']]];
   Object.keys(liveMandiByCrop).forEach(key=>delete liveMandiByCrop[key]);
   wanted.forEach(([cardName,commodity,markets])=>{
@@ -120,7 +121,7 @@ function renderMandiPrices(data){
     card.querySelector('b').textContent=price.commodity;
     card.querySelector('strong').innerHTML=`${formatPrice(price.modalPrice)} <small>/ Q</small>`;
     card.querySelector('em').className='up';
-    card.querySelector('em').innerHTML='<i class="fa-solid fa-circle"></i> Live';
+    card.querySelector('em').innerHTML=isLive?'<i class="fa-solid fa-circle"></i> Live':'<i class="fa-solid fa-circle"></i> Demo';
     if(insightData[cardName])insightData[cardName].price=price.modalPrice;
   });
   $('#mandiPriceRows').innerHTML=prices.slice(0,50).map(price=>`<tr><td>${escapeHtml(price.commodity)}</td><td>${escapeHtml(price.market)}, ${escapeHtml(price.district||'MH')}</td><td>${formatPrice(price.modalPrice)}</td><td>${escapeHtml(price.date||'Latest')}</td></tr>`).join('')||'<tr><td>No Maharashtra price records available.</td><td></td><td></td><td></td></tr>';
@@ -143,7 +144,7 @@ async function loadMandiPrices(){
   try{
     const data=await fetchMandiPayload();
     renderMandiPrices(data);
-    $('#mandiStatus').textContent=data.updatedAt?`UPDATED ${new Date(data.updatedAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`:'LIVE';
+    $('#mandiStatus').textContent=data.isFallback?'DEMO DATA · AGMARKNET UNAVAILABLE':data.updatedAt?`UPDATED ${new Date(data.updatedAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`:'LIVE';
   }catch(error){
     console.info('Using price demo data until AGMARKNET is connected.',error);
     $('#mandiStatus').textContent='DEMO DATA · API PENDING';

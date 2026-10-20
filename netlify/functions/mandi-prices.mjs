@@ -7,6 +7,13 @@ const FEATURED = [
   { key: 'peas', commodities: ['Peas', 'Green Peas'], markets: ['Pune', 'Nashik', 'Mumbai'] }
 ];
 
+const FALLBACK_PRICES = [
+  { commodity: 'Onion', market: 'Nashik', district: 'Nashik', state: 'Maharashtra', modalPrice: 2450, date: 'Demo data' },
+  { commodity: 'Tomato', market: 'Pune', district: 'Pune', state: 'Maharashtra', modalPrice: 1800, date: 'Demo data' },
+  { commodity: 'Brinjal', market: 'Nashik', district: 'Nashik', state: 'Maharashtra', modalPrice: 2100, date: 'Demo data' },
+  { commodity: 'Green Peas', market: 'Pune', district: 'Pune', state: 'Maharashtra', modalPrice: 4000, date: 'Demo data' }
+];
+
 const corsHeaders = {
   'Content-Type': 'application/json; charset=utf-8',
   'Access-Control-Allow-Origin': '*',
@@ -50,7 +57,7 @@ const fetchRecords = async (apiKey, filters = {}) => {
   url.searchParams.set('api-key', apiKey);
   url.searchParams.set('format', 'json');
   url.searchParams.set('limit', filters.limit || '200');
-  if (filters.state) url.searchParams.set('filters[state]', filters.state);
+  if (filters.state) url.searchParams.set('filters[state.keyword]', filters.state);
   if (filters.commodity) url.searchParams.set('filters[commodity]', filters.commodity);
 
   const response = await fetch(url, { headers: { Accept: 'application/json' } });
@@ -104,7 +111,16 @@ const loadPrices = async () => {
         .map(result => result.reason?.message)
         .filter(Boolean)
         .slice(0, 2);
-      return jsonBody(502, { error: 'AGMARKNET returned no usable Maharashtra prices for onions, tomatoes, brinjal, or peas.', details: failures.length ? failures : undefined });
+      const featured = Object.fromEntries(FEATURED.map(crop => [crop.key, pickFeatured(FALLBACK_PRICES, crop)]));
+      return jsonBody(200, {
+        updatedAt: new Date().toISOString(),
+        source: 'Demo fallback — AGMARKNET unavailable',
+        isFallback: true,
+        warning: 'Live AGMARKNET data could not be reached. Showing demo prices.',
+        details: failures.length ? failures : undefined,
+        featured,
+        prices: FALLBACK_PRICES
+      }, 'no-store');
     }
     const featured = Object.fromEntries(FEATURED.map(crop => [crop.key, pickFeatured(prices, crop)]));
 
