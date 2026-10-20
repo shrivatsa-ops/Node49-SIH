@@ -50,14 +50,15 @@ const fetchRecords = async (apiKey, filters = {}) => {
   url.searchParams.set('api-key', apiKey);
   url.searchParams.set('format', 'json');
   url.searchParams.set('limit', filters.limit || '200');
-  url.searchParams.set('filters[state]', 'Maharashtra');
+  if (filters.state) url.searchParams.set('filters[state]', filters.state);
   if (filters.commodity) url.searchParams.set('filters[commodity]', filters.commodity);
 
   const response = await fetch(url, { headers: { Accept: 'application/json' } });
   if (!response.ok) throw new Error(`AGMARKNET returned ${response.status}`);
 
   const payload = await response.json();
-  return (payload.records || []).map(normalize).filter(isUsable);
+  if (!Array.isArray(payload.records)) throw new Error(payload.error || payload.message || 'AGMARKNET returned no records array.');
+  return payload.records.map(normalize).filter(isUsable);
 };
 
 const nameHas = (value, needles) => needles.some(needle => compact(value).includes(compact(needle)));
@@ -82,10 +83,29 @@ const loadPrices = async () => {
   if (!apiKey) return jsonBody(503, { error: 'AGMARKNET API key has not been configured.' });
 
   try {
-    const requests = FEATURED.flatMap(crop => crop.commodities.map(commodity => fetchRecords(apiKey, { commodity, limit: '80' })));
+    const requests = FEATURED.flatMap(crop => crop.commodities.map(commodity => fetchRecords(apiKey, { commodity, state: 'Maharashtra', limit: '80' })));
     const batches = await Promise.allSettled(requests);
-    const prices = uniquePrices(batches.flatMap(result => result.status === 'fulfilled' ? result.value : []));
-    if (!prices.length) return jsonBody(502, { error: 'AGMARKNET did not return usable Maharashtra prices.' });
+    let prices = uniquePrices(batches.flatMap(result => result.status === 'fulfilled' ? result.value : []));
+
+    // Some data.gov.in deployments do not apply the server-side state filter consistently.
+    // Retry the same four commodities without it, then keep Maharashtra rows locally.
+    if (!prices.length) {
+      const fallbackRequests = FEATURED.flatMap(crop => crop.commodities.map(commodity => fetchRecords(apiKey, { commodity, limit: '1000' })));
+      const fallbackBatches = await Promise.allSettled(fallbackRequests);
+      prices = uniquePrices(fallbackBatches
+        .flatMap(result => result.status === 'fulfilled' ? result.value : [])
+        .filter(price => String(price.state || '').trim().toLowerCase() === 'maharashtra'));
+      batches.push(...fallbackBatches);
+    }
+
+    if (!prices.length) {
+      const failures = batches
+        .filter(result => result.status === 'rejected')
+        .map(result => result.reason?.message)
+        .filter(Boolean)
+        .slice(0, 2);
+      return jsonBody(502, { error: 'AGMARKNET returned no usable Maharashtra prices for onions, tomatoes, brinjal, or peas.', details: failures.length ? failures : undefined });
+    }
     const featured = Object.fromEntries(FEATURED.map(crop => [crop.key, pickFeatured(prices, crop)]));
 
     return jsonBody(
