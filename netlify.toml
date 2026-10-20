@@ -9,3 +9,8 @@
   from = "/api/mandi-prices"
   to = "/.netlify/functions/mandi-prices"
   status = 200
+
+[[redirects]]
+  from = "/api/crop-analysis"
+  to = "/.netlify/functions/crop-analysis"
+  status = 200
