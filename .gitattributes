@@ -1,0 +1,104 @@
+# =========================================
+# Default behavior
+# =========================================
+
+# Treat all files as text by default, but let Git auto-detect
+* text=auto
+
+# =========================================
+# Line Ending Normalization
+# =========================================
+
+# Force LF for standard text and code files across all platforms
+*.js     text eol=lf
+*.ts     text eol=lf
+*.jsx    text eol=lf
+*.tsx    text eol=lf
+*.py     text eol=lf
+*.rb     text eol=lf
+*.go     text eol=lf
+*.rs     text eol=lf
+*.java   text eol=lf
+*.c      text eol=lf
+*.cpp    text eol=lf
+*.h      text eol=lf
+*.html   text eol=lf
+*.css    text eol=lf
+*.scss   text eol=lf
+*.less   text eol=lf
+*.json   text eol=lf
+*.yaml   text eol=lf
+*.yml    text eol=lf
+*.toml   text eol=lf
+*.xml    text eol=lf
+*.md     text eol=lf
+*.txt    text eol=lf
+*.sh     text eol=lf eol-attr=LF
+*.bash   text eol=lf
+*.zsh    text eol=lf
+*.sql    text eol=lf
+*.dockerfile text eol=lf
+Dockerfile   text eol=lf
+Makefile     text eol=lf
+
+# Force CRLF for Windows-specific script files if needed
+*.bat    text eol=crlf
+*.cmd    text eol=crlf
+*.ps1    text eol=crlf
+
+# =========================================
+# Binary Files (Disable diffing & merging)
+# =========================================
+
+# Images
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.ico    binary
+*.webp   binary
+*.svg    binary
+*.tiff   binary
+*.bmp    binary
+
+# Archives & Compressed
+*.zip    binary
+*.tar    binary
+*.gz     binary
+*.7z     binary
+*.rar    binary
+*.bz2    binary
+
+# Documents & Fonts
+*.pdf    binary
+*.doc    binary
+*.docx   binary
+*.xls    binary
+*.xlsx   binary
+*.ppt    binary
+*.pptx   binary
+*.otf    binary
+*.ttf    binary
+*.woff   binary
+*.woff2  binary
+
+# Compiled binaries & libraries
+*.exe    binary
+*.dll    binary
+*.so     binary
+*.dylib  binary
+*.class  binary
+*.o      binary
+*.obj    binary
+
+# =========================================
+# Custom Merges and Diffs
+# =========================================
+
+# Lock files (prefer union merge to avoid conflict resolution headaches)
+package-lock.json merge=union
+yarn.lock       merge=union
+pnpm-lock.yaml  merge=union
+Cargo.lock      merge=union
+poetry.lock     merge=union
+Gemfile.lock    merge=union
