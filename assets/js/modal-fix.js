@@ -3,7 +3,21 @@
   function closeModal(modal) {
     if (!modal) return;
     modal.classList.remove('open');
-    // if no other modal is open, remove body class
+    if (modal.id === 'cameraModal') {
+      var video = document.getElementById('cameraFeed');
+      if (video && video.srcObject) {
+        video.srcObject.getTracks().forEach(function (track) { track.stop(); });
+        video.srcObject = null;
+        video.style.display = 'none';
+      }
+      var fallback = document.querySelector('.camera-fallback');
+      if (fallback) fallback.style.display = 'grid';
+    }
+    if (modal.id === 'cameraModal' || modal.id === 'qualityModal') {
+      var lot = document.getElementById('lotModal');
+      if (lot) lot.classList.add('open');
+      document.body.classList.add('modal-open');
+    }
     if (!document.querySelector('.modal.open')) {
       document.body.classList.remove('modal-open');
     }
@@ -28,7 +42,7 @@
   // close via Escape key
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
-      var open = document.querySelector('.modal.open');
+      var open = Array.prototype.slice.call(document.querySelectorAll('.modal.open')).pop();
       if (open) closeModal(open);
     }
   });
