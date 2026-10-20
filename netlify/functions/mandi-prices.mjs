@@ -3,8 +3,8 @@ const CACHE_SECONDS = 600;
 const FEATURED = [
   { key: 'onion', commodities: ['Onion'], markets: ['Nashik', 'Lasalgaon', 'Pimpalgaon'] },
   { key: 'tomato', commodities: ['Tomato'], markets: ['Pune', 'Pimpri', 'Mumbai'] },
-  { key: 'cotton', commodities: ['Cotton'], markets: ['Nagpur', 'Yavatmal', 'Akola'] },
-  { key: 'soybean', commodities: ['Soyabean', 'Soybean'], markets: ['Latur', 'Washim', 'Akola'] }
+  { key: 'brinjal', commodities: ['Brinjal'], markets: ['Nashik', 'Pune', 'Mumbai'] },
+  { key: 'peas', commodities: ['Peas', 'Green Peas'], markets: ['Pune', 'Nashik', 'Mumbai'] }
 ];
 
 const corsHeaders = {
@@ -82,10 +82,7 @@ const loadPrices = async () => {
   if (!apiKey) return jsonBody(503, { error: 'AGMARKNET API key has not been configured.' });
 
   try {
-    const requests = [
-      fetchRecords(apiKey, { limit: '400' }),
-      ...FEATURED.flatMap(crop => crop.commodities.map(commodity => fetchRecords(apiKey, { commodity, limit: '80' })))
-    ];
+    const requests = FEATURED.flatMap(crop => crop.commodities.map(commodity => fetchRecords(apiKey, { commodity, limit: '80' })));
     const batches = await Promise.allSettled(requests);
     const prices = uniquePrices(batches.flatMap(result => result.status === 'fulfilled' ? result.value : []));
     if (!prices.length) return jsonBody(502, { error: 'AGMARKNET did not return usable Maharashtra prices.' });

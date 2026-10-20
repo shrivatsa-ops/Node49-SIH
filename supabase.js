@@ -61,7 +61,7 @@ function localStore() {
   };
 }
 
-export async function createDemoStore() {
+async function createDemoStore() {
   if (!configured()) return localStore();
   try {
     const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
